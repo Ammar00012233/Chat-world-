@@ -19,50 +19,45 @@
 <div id="messages"></div>
 
 <input id="msg" placeholder="Type your message..." maxlength="200" />
-<button onclick="send()">Send</button>
+<button id="sendBtn">Send</button>
 
 <script>
-  // ✅ Supabase keys
+  // Supabase keys
   const supabase = supabase.createClient(
-    "https://xrycbvmjskyagnqdrvrt.supabase.co",  // Project URL
-    "sb_publishable_V-cqr_rpr8N5nE-MDUrXZQ_PrAhveCY" // anon key
+    "https://xrycbvmjskyagnqdrvrt.supabase.co",
+    "sb_publishable_V-cqr_rpr8N5nE-MDUrXZQ_PrAhveCY"
   );
+
+  const msgInput = document.getElementById('msg');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesDiv = document.getElementById('messages');
 
   // Load messages
   async function loadMessages() {
-    let { data } = await supabase
+    const { data } = await supabase
       .from('messages')
       .select('*')
       .order('created_at', { ascending: true });
-
-    document.getElementById("messages").innerHTML =
-      data.map(m => `<p>${m.content}</p>`).join('');
-
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    messagesDiv.innerHTML = data.map(m => `<p>${m.content}</p>`).join('');
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
   // Send message
-  async function send() {
-    let text = document.getElementById("msg").value.trim();
-    if (!text || text.includes("http")) return; // prevent empty or links
+  sendBtn.addEventListener('click', async () => {
+    const text = msgInput.value.trim();
+    if (!text || text.includes('http')) return;
 
-    await supabase.from('messages').insert([{ content: text }]);
-    document.getElementById("msg").value = "";
-    loadMessages();
-  }
+    try {
+      await supabase.from('messages').insert([{ content: text }]);
+      msgInput.value = '';
+      loadMessages();
+    } catch (err) {
+      console.error("Insert failed:", err);
+    }
+  });
 
-  // Delete messages older than 12 hours
-  async function deleteOldMessages() {
-    const twelveHoursAgo = new Date(Date.now() - 12*60*60*1000).toISOString();
-    await supabase
-      .from('messages')
-      .delete()
-      .lt('created_at', twelveHoursAgo);
-  }
-
-  // Auto refresh every 2 seconds
+  // Auto refresh messages every 2 seconds
   setInterval(loadMessages, 2000);
-  setInterval(deleteOldMessages, 600000); // every 10 min
   loadMessages();
 </script>
 
