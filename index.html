@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>شات العالم</title>
+  <meta charset="UTF-8">
+  <title>World Chat</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: Arial; padding: 20px; background: #f2f2f2; }
-    #messages { height: 300px; overflow-y: auto; border:1px solid #ccc; padding:10px; margin-bottom:10px; background:white; }
+    #messages { height: 400px; overflow-y: auto; border:1px solid #ccc; padding:10px; margin-bottom:10px; background:white; }
     input { width: 80%; padding:5px; }
     button { padding:5px 10px; }
-    p { margin:3px 0; }
+    p { margin:3px 0; word-wrap: break-word; }
   </style>
 </head>
 <body>
 
-<h2>شات العالم</h2>
+<h2>World Chat</h2>
 
 <div id="messages"></div>
 
-<input id="msg" placeholder="اكتب رسالتك..." maxlength="100" />
-<button onclick="send()">إرسال</button>
+<input id="msg" placeholder="Type your message..." maxlength="200" />
+<button onclick="send()">Send</button>
 
 <script>
-  // ✅ مفاتيح Supabase
+  // ✅ Supabase keys
   const supabase = supabase.createClient(
     "https://xrycbvmjskyagnqdrvrt.supabase.co",  // Project URL
-    "sb_publishable_V-cqr_rpr8N5nE-MDUrXZQ_PrAhveCY" // anon public key
+    "sb_publishable_V-cqr_rpr8N5nE-MDUrXZQ_PrAhveCY" // anon key
   );
 
-  // تحميل الرسائل وعرضها
+  // Load messages
   async function loadMessages() {
     let { data } = await supabase
       .from('messages')
@@ -40,17 +41,28 @@
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
   }
 
-  // إرسال رسالة
+  // Send message
   async function send() {
-    let text = document.getElementById("msg").value;
-    if (!text || text.includes("http")) return; // منع الروابط
+    let text = document.getElementById("msg").value.trim();
+    if (!text || text.includes("http")) return; // prevent empty or links
 
     await supabase.from('messages').insert([{ content: text }]);
     document.getElementById("msg").value = "";
+    loadMessages();
   }
 
-  // تحديث كل 2 ثانية
+  // Delete messages older than 12 hours
+  async function deleteOldMessages() {
+    const twelveHoursAgo = new Date(Date.now() - 12*60*60*1000).toISOString();
+    await supabase
+      .from('messages')
+      .delete()
+      .lt('created_at', twelveHoursAgo);
+  }
+
+  // Auto refresh every 2 seconds
   setInterval(loadMessages, 2000);
+  setInterval(deleteOldMessages, 600000); // every 10 min
   loadMessages();
 </script>
 
