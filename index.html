@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>شات العالم</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+    #messages { height: 300px; overflow-y: auto; border:1px solid #ccc; padding:10px; margin-bottom:10px; background:white; }
+    input { width: 80%; padding:5px; }
+    button { padding:5px 10px; }
+    p { margin:3px 0; }
+  </style>
+</head>
+<body>
+
+<h2>شات العالم</h2>
+
+<div id="messages"></div>
+
+<input id="msg" placeholder="اكتب رسالتك..." maxlength="100" />
+<button onclick="send()">إرسال</button>
+
+<script>
+  // ✅ مفاتيح Supabase
+  const supabase = supabase.createClient(
+    "https://xrycbvmjskyagnqdrvrt.supabase.co",  // Project URL
+    "sb_publishable_V-cqr_rpr8N5nE-MDUrXZQ_PrAhveCY" // anon public key
+  );
+
+  // تحميل الرسائل وعرضها
+  async function loadMessages() {
+    let { data } = await supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    document.getElementById("messages").innerHTML =
+      data.map(m => `<p>${m.content}</p>`).join('');
+
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+  }
+
+  // إرسال رسالة
+  async function send() {
+    let text = document.getElementById("msg").value;
+    if (!text || text.includes("http")) return; // منع الروابط
+
+    await supabase.from('messages').insert([{ content: text }]);
+    document.getElementById("msg").value = "";
+  }
+
+  // تحديث كل 2 ثانية
+  setInterval(loadMessages, 2000);
+  loadMessages();
+</script>
+
+</body>
+</html>
